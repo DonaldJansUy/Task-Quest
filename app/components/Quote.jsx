@@ -16,7 +16,7 @@ const Quote = () => {
 
   return (
     <div className="flex flex-col items-center justify-center text-center my-4">
-      <p className="text-xl mx-4 truncate">"{quote}"</p>
+      <p className="text-xl mx-4 truncate">&ldquo;{quote}&rdquo;</p>
       <p className="text-lg mt-2">- {author}</p>
     </div>
   );

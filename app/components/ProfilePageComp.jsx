@@ -5,6 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from './_utils/firebase';
 import { useUserAuth } from '../components/_utils/auth-context';
 import Link from 'next/link';
+import Image from 'next/image'; // Import the Image component
 
 const ProfilePageComp = () => {
   const { user, updateUserProfile, firebaseSignOut } = useUserAuth();
@@ -41,10 +42,12 @@ const ProfilePageComp = () => {
       <h1 className="text-4xl font-bold text-gray-800 mb-8">Profile Page</h1>
       <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-8">
         <div className="flex items-center justify-center mb-8">
-          <img
+          <Image
             src="" // link path here
             alt=""
-            className="w-32 h-32 rounded-full border-4 border-gray-300"
+            width={128} // Specify the width
+            height={128} // Specify the height
+            className="rounded-full border-4 border-gray-300"
           />
         </div>
         <div className="flex flex-col items-center">
@@ -85,7 +88,7 @@ const ProfilePageComp = () => {
         <div className="flex flex-col items-center mt-6">
           <p className="mb-4">
             <Link href="/HomePage" className="text-lg text-blue-500 hover:underline">
-              LET'S GO EARN SOME TQ POINTS!
+              LET&apos;S GO EARN SOME TQ POINTS!
             </Link>
           </p>
           <button

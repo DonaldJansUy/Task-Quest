@@ -1,15 +1,14 @@
-"use client"
+"use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import Modal from "react-modal";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Quote from "../components/Quote";
 import TaskControls from "../components/TaskControls";
 import CategoryControls from "../components/CategoryControls";
 import CategoryList from "../components/CategoryList";
 import TaskModal from "../components/TaskModal";
+import { useUserAuth } from "../components/_utils/auth-context";
+import { addTaskToFirestore, getTasksFromFirestore, deleteTaskFromFirestore } from "../components/_services/task-list";
 
 const initialCategories = [
   { name: "Friends", tasks: [] },
@@ -29,6 +28,32 @@ const HomePage = () => {
   const [totalPoints, setTotalPoints] = useState(0);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [importance, setImportance] = useState("low");
+  const [tasks, setTasks] = useState([]); // Added state for tasks
+
+  const { user } = useUserAuth(); // Access the authenticated user
+
+  // Fetch tasks from Firestore when component mounts
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (user) {
+        const fetchedTasks = await getTasksFromFirestore(user.uid);
+        setTasks(fetchedTasks);
+
+        // Update categories with fetched tasks
+        const updatedCategories = initialCategories.map(category => ({
+          ...category,
+          tasks: fetchedTasks.filter(task => task.category === category.name),
+        }));
+        setCategoryList(updatedCategories);
+
+        // Calculate total points
+        const totalPoints = fetchedTasks.reduce((sum, task) => sum + task.points, 0);
+        setTotalPoints(totalPoints);
+      }
+    };
+
+    fetchTasks();
+  }, [user]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => {
@@ -41,22 +66,29 @@ const HomePage = () => {
     setImportance("low");
   };
 
-  const handleAddTask = () => {
-    if (task && selectedCategory) {
+  const handleAddTask = async () => {
+    if (task && selectedCategory && user) {
+      const newTask = {
+        name: task,
+        points: parseInt(points),
+        importance: importance === "high",
+        creator: user.uid // Add the creator field
+      };
       const updatedCategories = categoryList.map((category) => {
         if (category.name === selectedCategory) {
           return {
             ...category,
-            tasks: [
-              ...category.tasks,
-              { name: task, points: parseInt(points), importance },
-            ],
+            tasks: [...category.tasks, newTask],
           };
         }
         return category;
       });
       setCategoryList(updatedCategories);
       setTotalPoints(totalPoints + parseInt(points));
+
+      // Add task to Firestore
+      await addTaskToFirestore(user.uid, selectedCategory, newTask);
+
       closeModal();
     }
   };
@@ -69,7 +101,7 @@ const HomePage = () => {
     }
   };
 
-  const handleDeleteTask = (categoryName, taskIndex) => {
+  const handleDeleteTask = async (categoryName, taskIndex) => {
     const updatedCategories = categoryList.map((category) => {
       if (category.name === categoryName) {
         const taskToDelete = category.tasks[taskIndex];
@@ -80,6 +112,10 @@ const HomePage = () => {
       return category;
     });
     setCategoryList(updatedCategories);
+
+    // Delete task from Firestore
+    const taskToDelete = categoryList.find(category => category.name === categoryName).tasks[taskIndex];
+    await deleteTaskFromFirestore(user.uid, taskToDelete.id);
   };
 
   const toggleCategoryExpansion = (categoryName) => {

@@ -150,13 +150,18 @@ const HomePage = () => {
   };
 
   return (
-    <div className="p-4">
-      <Header />
-      <main>
+    <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 via-green-500 to-red-500">
+      <div className="bg-white bg-opacity-80 rounded-lg p-10 w-full max-w-full m-9">
+        <Header />
         <Quote />
         <TaskControls openModal={openModal} />
-        <h2 className="font-bold text-center">AVAILABLE TQ POINTS: {totalPoints}</h2>
-        <CategoryControls hideAllCategories={hideAllCategories} expandAllCategories={expandAllCategories} />
+        <h2 className="font-bold text-center text-2xl mt-4 mb-8">
+          AVAILABLE TQ POINTS: {totalPoints}
+        </h2>
+        <CategoryControls
+          hideAllCategories={hideAllCategories}
+          expandAllCategories={expandAllCategories}
+        />
         <CategoryList
           categoryList={categoryList}
           expandedCategories={expandedCategories}
@@ -164,25 +169,25 @@ const HomePage = () => {
           handleDeleteTask={handleDeleteTask}
           onDragEnd={onDragEnd}
         />
-      </main>
-      <TaskModal
-        isModalOpen={isModalOpen}
-        closeModal={closeModal}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        newCategory={newCategory}
-        setNewCategory={setNewCategory}
-        task={task}
-        setTask={setTask}
-        points={points}
-        setPoints={setPoints}
-        importance={importance}
-        setImportance={setImportance}
-        handleAddTask={handleAddTask}
-        categoryList={categoryList}
-        handleAddCategory={handleAddCategory}
-      />
-    </div>
+        <TaskModal
+          isModalOpen={isModalOpen}
+          closeModal={closeModal}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          newCategory={newCategory}
+          setNewCategory={setNewCategory}
+          task={task}
+          setTask={setTask}
+          points={points}
+          setPoints={setPoints}
+          importance={importance}
+          setImportance={setImportance}
+          handleAddTask={handleAddTask}
+          categoryList={categoryList}
+          handleAddCategory={handleAddCategory}
+        />
+      </div>
+    </main>
   );
 };
 

@@ -15,32 +15,31 @@ const ProfilePage = () => {
     }
   }
 
-  async function handleSignOut() {
-    try {
-      await firebaseSignOut();
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
   console.dir(user);
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="w-full md:w-1/2">
+    <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 via-green-500 to-red-500 ">
+      <div>
         {user ? (
-          <div className="text-center">
+          <div className="text-center ">
             <ProfilePageComp />
           </div>
         ) : (
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Start Reaping Start Sowing</h1>
+          <div className="text-center md:max-w-max p-40 bg-gray-">
+            <h1 className=" font-extrabold text-6xl font- mb-6 text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-purple-700 to-orange-500 animate-pulse py-20">
+              Start Reaping
+              <br></br>
+            </h1>
             <button
               onClick={handleSignIn}
-              className="text-lg m-2 hover:underline bg-blue-500 text-white px-4 py-2 rounded-lg"
+              className="text-4xl bg-yellow-700 font-bold text-white px-6 py-3 rounded-lg shadow hover:bg-green-900 transition duration-300"
             >
               Sign In
             </button>
+            <h1 className=" font-extrabold text-6xl font- mb-6 text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-purple-700 to-orange-500 animate-pulse py-20">
+
+              Start Sowing
+            </h1>
           </div>
         )}
       </div>

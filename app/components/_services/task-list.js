@@ -1,7 +1,6 @@
 import { db } from '../_utils/firebase';
-import { collection, getDocs, addDoc, query, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, query, deleteDoc, doc, updateDoc, where, increment } from "firebase/firestore";
 
-// Function to retrieve all tasks for a specific user from Firestore
 export const getTasksFromFirestore = async (userId) => {
   try {
     const tasks = [];
@@ -20,14 +19,13 @@ export const getTasksFromFirestore = async (userId) => {
   }
 };
 
-// Function to add a new task to a specific user's list of tasks in Firestore
 export const addTaskToFirestore = async (userId, categoryName, task) => {
   try {
     const tasksRef = collection(db, `users/${userId}/items`);
     const newTask = {
       ...task,
       category: categoryName,
-      creator: userId, // Add the creator field
+      creator: userId,
     };
     const docRef = await addDoc(tasksRef, newTask);
     
@@ -38,7 +36,38 @@ export const addTaskToFirestore = async (userId, categoryName, task) => {
   }
 };
 
-// Function to delete a task from a specific user's list of tasks in Firestore
+export const completeTaskInFirestore = async (userId, taskName, taskPoints) => {
+  if (!userId || !taskName || taskPoints === undefined) {
+    throw new Error("Missing required parameters for completeTaskInFirestore");
+  }
+
+  const tasksRef = collection(db, `users/${userId}/items`);
+  const q = query(tasksRef, where("name", "==", taskName));
+  const querySnapshot = await getDocs(q);
+
+  // Log the number of documents found for debugging
+  console.log(`User ID: ${userId}, Task Name: ${taskName}, Query Results: ${querySnapshot.docs.length} found`);
+
+  if (querySnapshot.empty) {
+
+    return "Task not found";
+  }
+
+  const taskDoc = querySnapshot.docs[0];
+  if (!taskDoc || !taskDoc.ref) {
+    throw new Error("Task document reference not found");
+  }
+
+  await deleteDoc(taskDoc.ref);
+
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, {
+    accumulatedPoints: increment(taskPoints)
+  });
+
+  return "Task completed successfully"; // Return a success message
+};
+
 export const deleteTaskFromFirestore = async (userId, taskId) => {
   try {
     const taskRef = doc(db, `users/${userId}/items`, taskId);

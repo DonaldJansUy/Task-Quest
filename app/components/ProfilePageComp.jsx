@@ -42,7 +42,7 @@ const ProfilePageComp = () => {
   return (
     <main className="flex items-center justify-center h-screen w-screen bg-gradient-to-br from-blue-500 via-green-500 to-red-500">
       <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg p-16 text-center m-4 border border-gray-300">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8">Insert Profile Picture Here</h1>
+        <h1 className="text-4xl font-bold text-gray-800 mb-8">USER PROFILE</h1>
         <div className="flex items-center justify-center mb-7">
           <Image
             src="" // Add your image path here

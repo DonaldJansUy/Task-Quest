@@ -8,7 +8,9 @@ import CategoryControls from "../components/CategoryControls";
 import CategoryList from "../components/CategoryList";
 import TaskModal from "../components/TaskModal";
 import { useUserAuth } from "../components/_utils/auth-context";
-import { addTaskToFirestore, getTasksFromFirestore, deleteTaskFromFirestore } from "../components/_services/task-list";
+import { addTaskToFirestore, getTasksFromFirestore, deleteTaskFromFirestore, completeTaskInFirestore } from "../components/_services/task-list";
+import { doc, updateDoc, increment } from "firebase/firestore"; // Import Firestore functions
+
 
 const initialCategories = [
   { name: "Friends", tasks: [] },
@@ -112,10 +114,27 @@ const HomePage = () => {
       return category;
     });
     setCategoryList(updatedCategories);
-
+  
     // Delete task from Firestore
     const taskToDelete = categoryList.find(category => category.name === categoryName).tasks[taskIndex];
-    await deleteTaskFromFirestore(user.uid, taskToDelete.id);
+    await deleteTaskFromFirestore(user.uid, taskToDelete.name);
+  };
+
+  const handleCompleteTask = async (categoryName, taskIndex) => {
+    const updatedCategories = categoryList.map((category) => {
+      if (category.name === categoryName) {
+        const completedTask = category.tasks[taskIndex];
+        const updatedTasks = category.tasks.filter((_, index) => index !== taskIndex);
+        setTotalPoints(totalPoints - completedTask.points);
+        return { ...category, tasks: updatedTasks };
+      }
+      return category;
+    });
+    setCategoryList(updatedCategories);
+  
+    // Complete task in Firestore
+    const completedTask = categoryList.find(category => category.name === categoryName).tasks[taskIndex];
+    await completeTaskInFirestore(user.uid, completedTask.name, completedTask.points);
   };
 
   const toggleCategoryExpansion = (categoryName) => {
@@ -167,6 +186,7 @@ const HomePage = () => {
           expandedCategories={expandedCategories}
           toggleCategoryExpansion={toggleCategoryExpansion}
           handleDeleteTask={handleDeleteTask}
+          handleCompleteTask={handleCompleteTask} // Pass handleCompleteTask to CategoryList
           onDragEnd={onDragEnd}
         />
         <TaskModal

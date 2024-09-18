@@ -2,11 +2,12 @@
 
 import { useContext, createContext, useState, useEffect } from "react";
 import { signInWithPopup, signOut, onAuthStateChanged, GithubAuthProvider } from "firebase/auth";
-import { auth } from "./firebase";
-import { db } from './firebase'; // Import Firestore instance
-import { doc, setDoc, getDoc } from "firebase/firestore"; // Import Firestore functions
+import { auth, db } from "./firebase"; // Import Firestore instance
+import { doc, setDoc, getDoc, collection } from "firebase/firestore"; // Import Firestore functions
 
 const AuthContext = createContext();
+
+const initialCategories = ['Friends', 'Work', 'Fitness', 'Food'];
 
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -17,14 +18,21 @@ export const AuthContextProvider = ({ children }) => {
       const result = await signInWithPopup(auth, provider);
       const newUser = result.user;
 
-      // Create user document in Firestore if it doesn't exist
       const userDoc = doc(db, 'users', newUser.uid);
-      await setDoc(userDoc, {
-        email: newUser.email,
-        accumulatedPoints: 0 // Initialize accumulated points for new users
-      }, { merge: true });
+      const userSnapshot = await getDoc(userDoc);
 
-      // Set user state with the new user data
+      if (!userSnapshot.exists()) {
+        // User is new, initialize their profile with default categories
+        await setDoc(userDoc, {
+          email: newUser.email,
+          accumulatedPoints: 0,
+          categories: initialCategories.reduce((acc, category) => {
+            acc[category] = [];
+            return acc;
+          }, {}),
+        });
+      }
+
       setUser({ ...newUser, accumulatedPoints: 0 });
     } catch (error) {
       console.error("Sign-in error:", error);
@@ -47,17 +55,18 @@ export const AuthContextProvider = ({ children }) => {
         const userSnapshot = await getDoc(userDoc);
         
         if (userSnapshot.exists()) {
-          // Load user data from Firestore
           const data = userSnapshot.data();
-          setUser({ ...currentUser, accumulatedPoints: data.accumulatedPoints || 0 }); // Use existing points
+          setUser({ ...currentUser, accumulatedPoints: data.accumulatedPoints || 0 });
         } else {
-          // Create user document in Firestore if it doesn't exist
           await setDoc(userDoc, {
             email: currentUser.email,
-            accumulatedPoints: 0 // Initialize accumulated points for new users
-          }, { merge: true });
-          
-          setUser({ ...currentUser, accumulatedPoints: 0 }); // Set initial points
+            accumulatedPoints: 0,
+            categories: initialCategories.reduce((acc, category) => {
+              acc[category] = [];
+              return acc;
+            }, {}),
+          });
+          setUser({ ...currentUser, accumulatedPoints: 0 });
         }
       } else {
         setUser(null);
@@ -72,7 +81,7 @@ export const AuthContextProvider = ({ children }) => {
       await setDoc(userDoc, {
         name: name,
       }, { merge: true });
-      setUser((prevUser) => ({ ...prevUser, displayName: name })); // Update local user state
+      setUser((prevUser) => ({ ...prevUser, displayName: name }));
     }
   };
 

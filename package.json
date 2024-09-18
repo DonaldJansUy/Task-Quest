@@ -10,9 +10,10 @@
   },
   "dependencies": {
     "axios": "^1.7.2",
+    "date-fns": "^3.6.0",
     "encoding": "^0.1.13",
     "firebase": "^10.12.4",
-    "next": "14.2.5",
+    "next": "^14.2.6",
     "react": "^18",
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18",

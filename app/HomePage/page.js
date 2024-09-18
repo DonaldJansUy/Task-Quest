@@ -8,9 +8,14 @@ import CategoryControls from "../components/CategoryControls";
 import CategoryList from "../components/CategoryList";
 import TaskModal from "../components/TaskModal";
 import { useUserAuth } from "../components/_utils/auth-context";
-import { addTaskToFirestore, getTasksFromFirestore, deleteTaskFromFirestore, completeTaskInFirestore } from "../components/_services/task-list";
-import { doc, updateDoc, increment } from "firebase/firestore"; // Import Firestore functions
-
+import {
+  addTaskToFirestore,
+  getTasksFromFirestore,
+  deleteTaskFromFirestore,
+  completeTaskInFirestore,
+  updateTaskInFirestoreByName,
+  addCategoryToFirestore,   // New function to handle adding categories
+} from "../components/_services/task-list";
 
 const initialCategories = [
   { name: "Friends", tasks: [] },
@@ -30,25 +35,23 @@ const HomePage = () => {
   const [totalPoints, setTotalPoints] = useState(0);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [importance, setImportance] = useState("low");
-  const [tasks, setTasks] = useState([]); // Added state for tasks
+  const [tasks, setTasks] = useState([]);
+  const [dueDate, setDueDate] = useState("");
 
-  const { user } = useUserAuth(); // Access the authenticated user
+  const { user } = useUserAuth();
 
-  // Fetch tasks from Firestore when component mounts
   useEffect(() => {
     const fetchTasks = async () => {
       if (user) {
         const fetchedTasks = await getTasksFromFirestore(user.uid);
         setTasks(fetchedTasks);
 
-        // Update categories with fetched tasks
-        const updatedCategories = initialCategories.map(category => ({
+        const updatedCategories = initialCategories.map((category) => ({
           ...category,
-          tasks: fetchedTasks.filter(task => task.category === category.name),
+          tasks: fetchedTasks.filter((task) => task.category === category.name),
         }));
         setCategoryList(updatedCategories);
 
-        // Calculate total points
         const totalPoints = fetchedTasks.reduce((sum, task) => sum + task.points, 0);
         setTotalPoints(totalPoints);
       }
@@ -57,25 +60,41 @@ const HomePage = () => {
     fetchTasks();
   }, [user]);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => {
-    setTask("");
-    setSelectedCategory("");
-    setNewCategory("");
-    setPoints(0);
-    setIsAddingCategory(false);
-    setIsModalOpen(false);
-    setImportance("low");
+  const handleUpdateTask = async (categoryName, taskName, updatedTask) => {
+    const updatedCategories = categoryList.map((category) => {
+      if (category.name === categoryName) {
+        const updatedTasks = category.tasks.map((task) => 
+          task.name === taskName ? { ...task, ...updatedTask } : task
+        );
+        return { ...category, tasks: updatedTasks };
+      }
+      return category;
+    });
+
+    setCategoryList(updatedCategories);
+
+    if (user && updatedTask.name) {
+      try {
+        await updateTaskInFirestoreByName(user.uid, updatedTask.name, updatedTask);
+        console.log("Task updated successfully!");
+      } catch (error) {
+        console.error("Error updating task: ", error);
+        alert(`Error updating task: ${error.message}`);
+      }
+    }
   };
 
   const handleAddTask = async () => {
-    if (task && selectedCategory && user) {
+    if (task && selectedCategory && user && dueDate) {
       const newTask = {
         name: task,
         points: parseInt(points),
         importance: importance === "high",
-        creator: user.uid // Add the creator field
+        dueDate,
+        creator: user.uid,
+        category: selectedCategory, // Include the category name
       };
+
       const updatedCategories = categoryList.map((category) => {
         if (category.name === selectedCategory) {
           return {
@@ -85,21 +104,13 @@ const HomePage = () => {
         }
         return category;
       });
+
       setCategoryList(updatedCategories);
       setTotalPoints(totalPoints + parseInt(points));
 
-      // Add task to Firestore
-      await addTaskToFirestore(user.uid, selectedCategory, newTask);
+      await addTaskToFirestore(user.uid, selectedCategory, newTask, dueDate);
 
       closeModal();
-    }
-  };
-
-  const handleAddCategory = () => {
-    if (newCategory && !categoryList.some((category) => category.name === newCategory)) {
-      setCategoryList([...categoryList, { name: newCategory, tasks: [] }]);
-      setNewCategory("");
-      setIsAddingCategory(false);
     }
   };
 
@@ -114,9 +125,8 @@ const HomePage = () => {
       return category;
     });
     setCategoryList(updatedCategories);
-  
-    // Delete task from Firestore
-    const taskToDelete = categoryList.find(category => category.name === categoryName).tasks[taskIndex];
+
+    const taskToDelete = categoryList.find((category) => category.name === categoryName).tasks[taskIndex];
     await deleteTaskFromFirestore(user.uid, taskToDelete.name);
   };
 
@@ -131,9 +141,8 @@ const HomePage = () => {
       return category;
     });
     setCategoryList(updatedCategories);
-  
-    // Complete task in Firestore
-    const completedTask = categoryList.find(category => category.name === categoryName).tasks[taskIndex];
+
+    const completedTask = categoryList.find((category) => category.name === categoryName).tasks[taskIndex];
     await completeTaskInFirestore(user.uid, completedTask.name, completedTask.points);
   };
 
@@ -168,6 +177,36 @@ const HomePage = () => {
     setCategoryList(updatedCategories);
   };
 
+  const handleAddCategory = async (categoryName) => {
+    if (categoryName && !categoryList.some((category) => category.name === categoryName)) {
+      const newCategory = {
+        name: categoryName,
+        tasks: [],
+      };
+      setCategoryList([...categoryList, newCategory]);
+
+      if (user) {
+        try {
+          await addCategoryToFirestore(user.uid, categoryName);  // Save new category to Firestore
+        } catch (error) {
+          console.error("Error adding category: ", error);
+          alert(`Error adding category: ${error.message}`);
+        }
+      }
+    }
+  };
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => {
+    setTask("");
+    setSelectedCategory("");
+    setNewCategory("");
+    setPoints(0);
+    setIsAddingCategory(false);
+    setIsModalOpen(false);
+    setImportance("low");
+  };
+
   return (
     <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 via-green-500 to-red-500">
       <div className="bg-white bg-opacity-80 rounded-lg p-10 w-full max-w-full m-9">
@@ -186,7 +225,8 @@ const HomePage = () => {
           expandedCategories={expandedCategories}
           toggleCategoryExpansion={toggleCategoryExpansion}
           handleDeleteTask={handleDeleteTask}
-          handleCompleteTask={handleCompleteTask} // Pass handleCompleteTask to CategoryList
+          handleCompleteTask={handleCompleteTask}
+          handleUpdateTask={handleUpdateTask} // Pass handleUpdateTask to CategoryList
           onDragEnd={onDragEnd}
         />
         <TaskModal
@@ -202,9 +242,11 @@ const HomePage = () => {
           setPoints={setPoints}
           importance={importance}
           setImportance={setImportance}
+          dueDate={dueDate}
+          setDueDate={setDueDate}
           handleAddTask={handleAddTask}
           categoryList={categoryList}
-          handleAddCategory={handleAddCategory}
+          handleAddCategory={handleAddCategory} // Pass handleAddCategory to TaskModal
         />
       </div>
     </main>

@@ -1,5 +1,4 @@
-// components/TaskModal.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from 'react-modal';
 
 const TaskModal = ({
@@ -15,6 +14,8 @@ const TaskModal = ({
   setPoints,
   importance,
   setImportance,
+  dueDate, // Add due date state
+  setDueDate, // Add setDueDate function
   handleAddTask,
   categoryList,
   handleAddCategory,
@@ -88,6 +89,17 @@ const TaskModal = ({
           onChange={(e) => setPoints(e.target.value)}
           placeholder="Points"
           className="p-2 border rounded w-full"
+        />
+      </div>
+
+      <div className="mb-4">
+        <input
+          type="date" // Input type for due date
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          placeholder="Due date"
+          className="p-2 border rounded w-full"
+          required
         />
       </div>
 

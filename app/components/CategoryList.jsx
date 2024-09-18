@@ -1,8 +1,14 @@
-"use client";
 import React from "react";
 import CategoryItem from "./CategoryItem";
 
-const CategoryList = ({ categoryList, expandedCategories, toggleCategoryExpansion, handleDeleteTask, handleCompleteTask, onDragEnd }) => {
+const CategoryList = ({
+  categoryList,
+  expandedCategories,
+  toggleCategoryExpansion,
+  handleDeleteTask,
+  handleCompleteTask,
+  handleUpdateTask,
+}) => {
   return (
     <div className="space-y-4">
       {categoryList.map((category, index) => (
@@ -13,6 +19,7 @@ const CategoryList = ({ categoryList, expandedCategories, toggleCategoryExpansio
           toggleCategoryExpansion={toggleCategoryExpansion}
           handleDeleteTask={handleDeleteTask}
           handleCompleteTask={handleCompleteTask}
+          handleUpdateTask={handleUpdateTask}
         />
       ))}
     </div>
